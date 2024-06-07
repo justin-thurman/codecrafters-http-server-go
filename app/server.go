@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 )
 
@@ -14,19 +16,27 @@ func main() {
 		fmt.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
+	defer listener.Close()
 
-	conn, err := listener.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
-	var request []byte
-	_, err = conn.Read(request)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Request recieved")
-	fmt.Printf("%s", request)
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
 
-	// conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		go func(c net.Conn) {
+			defer c.Close()
+			reader := bufio.NewReader(c)
+			req, err := http.ReadRequest(reader)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			if req.URL.Path == "/" {
+				c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			} else {
+				c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			}
+		}(conn)
+	}
 }
