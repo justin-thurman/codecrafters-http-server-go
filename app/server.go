@@ -25,6 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("Request recieved")
 	fmt.Printf("%s", request)
 
 	// conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
