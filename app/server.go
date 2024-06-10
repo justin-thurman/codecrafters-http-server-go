@@ -37,14 +37,17 @@ func main() {
 				log.Fatal(err.Error())
 			}
 			if req.URL.Path == "/" {
-				c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+				res := response.New(200, "OK", "")
+				c.Write([]byte(res.String()))
 			} else if strings.HasPrefix(req.URL.Path, "/echo/") {
-				fmt.Printf("Got echo: %v", req.URL.Path)
 				echoBody, _ := strings.CutPrefix(req.URL.Path, "/echo/")
-				res := response.New(200, "OK", map[string]string{"Content-Type": "text/plain", "Content-Length": strconv.Itoa(len(echoBody))}, echoBody)
+				res := response.New(200, "OK", echoBody)
+				res.SetHeader("Content-Type", "text/plain")
+				res.SetHeader("Content-Length", strconv.Itoa(len(echoBody)))
 				c.Write([]byte(res.String()))
 			} else {
-				c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+				res := response.New(404, "Not Found", "")
+				c.Write([]byte(res.String()))
 			}
 		}(conn)
 	}
