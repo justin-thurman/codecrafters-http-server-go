@@ -36,16 +36,23 @@ func main() {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			if req.URL.Path == "/" {
+			switch path := req.URL.Path; {
+			case path == "/":
 				res := response.New(200, "OK", "")
 				c.Write([]byte(res.String()))
-			} else if strings.HasPrefix(req.URL.Path, "/echo/") {
+			case strings.HasPrefix(path, "/echo/"):
 				echoBody, _ := strings.CutPrefix(req.URL.Path, "/echo/")
 				res := response.New(200, "OK", echoBody)
 				res.SetHeader("Content-Type", "text/plain")
 				res.SetHeader("Content-Length", strconv.Itoa(len(echoBody)))
 				c.Write([]byte(res.String()))
-			} else {
+			case path == "/user-agent":
+				userAgent := req.Header["User-Agent"][0]
+				res := response.New(200, "OK", userAgent)
+				res.SetHeader("Content-Type", "text/plain")
+				res.SetHeader("Content-Length", strconv.Itoa(len(userAgent)))
+				c.Write([]byte(res.String()))
+			default:
 				res := response.New(404, "Not Found", "")
 				c.Write([]byte(res.String()))
 			}
