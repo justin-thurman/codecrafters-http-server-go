@@ -7,6 +7,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
+
+	"github.com/codecrafters-io/http-server-starter-go/app/response"
 )
 
 func main() {
@@ -34,6 +38,11 @@ func main() {
 			}
 			if req.URL.Path == "/" {
 				c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			} else if strings.HasPrefix(req.URL.Path, "/echo/") {
+				fmt.Printf("Got echo: %v", req.URL.Path)
+				echoBody, _ := strings.CutPrefix(req.URL.Path, "/echo/")
+				res := response.New(200, "OK", map[string]string{"Content-Type": "text/plain", "Content-Length": strconv.Itoa(len(echoBody))}, echoBody)
+				c.Write([]byte(res.String()))
 			} else {
 				c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 			}
