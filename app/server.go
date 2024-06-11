@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -60,21 +61,38 @@ func main() {
 				}
 				fileName, _ := strings.CutPrefix(path, "/files/")
 				filePath := dir + fileName
-				data, err := os.ReadFile(filePath)
-				if err != nil {
-					if errors.Is(err, os.ErrNotExist) {
-						res := response.New(404, "Not Found", "")
-						c.Write([]byte(res.String()))
-						return
-					} else {
-						log.Fatal(err.Error())
+				switch req.Method {
+				case "GET":
+					data, err := os.ReadFile(filePath)
+					if err != nil {
+						if errors.Is(err, os.ErrNotExist) {
+							res := response.New(404, "Not Found", "")
+							c.Write([]byte(res.String()))
+							return
+						} else {
+							log.Fatal(err.Error())
+						}
 					}
+					dataStr := string(data)
+					res := response.New(200, "OK", string(dataStr))
+					res.SetHeader("Content-Type", "application/octet-stream")
+					res.SetHeader("Content-Length", strconv.Itoa(len(dataStr)))
+					c.Write([]byte(res.String()))
+				case "POST":
+					b := make([]byte, req.ContentLength)
+					_, err := req.Body.Read(b)
+					if err != nil {
+						if !errors.Is(err, io.EOF) {
+							log.Fatal("Failed reading body: ", err.Error())
+						}
+					}
+					err = os.WriteFile(filePath, b, 0666)
+					if err != nil {
+						log.Fatal("Failed writing file: ", err.Error())
+					}
+					res := response.New(201, "Created", "")
+					c.Write([]byte(res.String()))
 				}
-				dataStr := string(data)
-				res := response.New(200, "OK", string(dataStr))
-				res.SetHeader("Content-Type", "application/octet-stream")
-				res.SetHeader("Content-Length", strconv.Itoa(len(dataStr)))
-				c.Write([]byte(res.String()))
 			default:
 				res := response.New(404, "Not Found", "")
 				c.Write([]byte(res.String()))
