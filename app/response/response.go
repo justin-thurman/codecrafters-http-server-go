@@ -1,7 +1,11 @@
 package response
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -20,8 +24,26 @@ func (r *Response) SetHeader(key, value string) {
 	r.Headers[key] = value
 }
 
-func (r *Response) SetBody(body string) {
+func (r *Response) SetBody(body string, req *http.Request) {
 	r.Body = body
+	encoding, ok := req.Header["Accept-Encoding"]
+	if ok {
+		for _, encodings := range encoding {
+			for _, val := range strings.Split(encodings, ",") {
+				val = strings.TrimSpace(val)
+				if val == "gzip" {
+					r.SetHeader("Content-Encoding", "gzip")
+					var buff bytes.Buffer
+					writer := gzip.NewWriter(&buff)
+					writer.Write([]byte(body))
+					writer.Close()
+					r.Body = buff.String()
+					break
+				}
+			}
+		}
+	}
+	r.SetHeader("Content-Length", strconv.Itoa(len(r.Body)))
 }
 
 func (r *Response) String() string {

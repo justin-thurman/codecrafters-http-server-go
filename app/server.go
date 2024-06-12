@@ -2,8 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -46,31 +44,13 @@ func main() {
 			case strings.HasPrefix(path, "/echo/"):
 				res := response.New(200, "OK")
 				echoBody, _ := strings.CutPrefix(req.URL.Path, "/echo/")
-				encoding, ok := req.Header["Accept-Encoding"]
-				if ok {
-					for _, encodings := range encoding {
-						for _, val := range strings.Split(encodings, ",") {
-							val = strings.TrimSpace(val)
-							if val == "gzip" {
-								res.SetHeader("Content-Encoding", "gzip")
-								var buff bytes.Buffer
-								writer := gzip.NewWriter(&buff)
-								writer.Write([]byte(echoBody))
-								writer.Close()
-								echoBody = buff.String()
-								break
-							}
-						}
-					}
-				}
-				res.SetBody(echoBody)
+				res.SetBody(echoBody, req)
 				res.SetHeader("Content-Type", "text/plain")
-				res.SetHeader("Content-Length", strconv.Itoa(len(echoBody)))
 				c.Write([]byte(res.String()))
 			case path == "/user-agent":
 				userAgent := req.Header["User-Agent"][0]
 				res := response.New(200, "OK")
-				res.SetBody(userAgent)
+				res.SetBody(userAgent, req)
 				res.SetHeader("Content-Type", "text/plain")
 				res.SetHeader("Content-Length", strconv.Itoa(len(userAgent)))
 				c.Write([]byte(res.String()))
@@ -96,7 +76,7 @@ func main() {
 					}
 					dataStr := string(data)
 					res := response.New(200, "OK")
-					res.SetBody(dataStr)
+					res.SetBody(dataStr, req)
 					res.SetHeader("Content-Type", "application/octet-stream")
 					res.SetHeader("Content-Length", strconv.Itoa(len(dataStr)))
 					c.Write([]byte(res.String()))
