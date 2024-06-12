@@ -12,12 +12,16 @@ type Response struct {
 	Status  int
 }
 
-func New(status int, reason string, body string) *Response {
-	return &Response{Body: body, Status: status, Reason: reason, Headers: make(map[string]string)}
+func New(status int, reason string) *Response {
+	return &Response{Status: status, Reason: reason, Headers: make(map[string]string)}
 }
 
 func (r *Response) SetHeader(key, value string) {
 	r.Headers[key] = value
+}
+
+func (r *Response) SetBody(body string) {
+	r.Body = body
 }
 
 func (r *Response) String() string {

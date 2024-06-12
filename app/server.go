@@ -39,17 +39,28 @@ func main() {
 			}
 			switch path := req.URL.Path; {
 			case path == "/":
-				res := response.New(200, "OK", "")
+				res := response.New(200, "OK")
 				c.Write([]byte(res.String()))
 			case strings.HasPrefix(path, "/echo/"):
+				res := response.New(200, "OK")
 				echoBody, _ := strings.CutPrefix(req.URL.Path, "/echo/")
-				res := response.New(200, "OK", echoBody)
+				encoding, ok := req.Header["Accept-Encoding"]
+				if ok {
+					if len(encoding) > 1 { // Only support one encoding for now
+						log.Fatalf("Expected single encoding, got %d", len(encoding))
+					}
+					if encoding[0] == "gzip" {
+						res.SetHeader("Content-Encoding", "gzip")
+					}
+				}
+				res.SetBody(echoBody)
 				res.SetHeader("Content-Type", "text/plain")
 				res.SetHeader("Content-Length", strconv.Itoa(len(echoBody)))
 				c.Write([]byte(res.String()))
 			case path == "/user-agent":
 				userAgent := req.Header["User-Agent"][0]
-				res := response.New(200, "OK", userAgent)
+				res := response.New(200, "OK")
+				res.SetBody(userAgent)
 				res.SetHeader("Content-Type", "text/plain")
 				res.SetHeader("Content-Length", strconv.Itoa(len(userAgent)))
 				c.Write([]byte(res.String()))
@@ -66,7 +77,7 @@ func main() {
 					data, err := os.ReadFile(filePath)
 					if err != nil {
 						if errors.Is(err, os.ErrNotExist) {
-							res := response.New(404, "Not Found", "")
+							res := response.New(404, "Not Found")
 							c.Write([]byte(res.String()))
 							return
 						} else {
@@ -74,7 +85,8 @@ func main() {
 						}
 					}
 					dataStr := string(data)
-					res := response.New(200, "OK", string(dataStr))
+					res := response.New(200, "OK")
+					res.SetBody(dataStr)
 					res.SetHeader("Content-Type", "application/octet-stream")
 					res.SetHeader("Content-Length", strconv.Itoa(len(dataStr)))
 					c.Write([]byte(res.String()))
@@ -90,11 +102,11 @@ func main() {
 					if err != nil {
 						log.Fatal("Failed writing file: ", err.Error())
 					}
-					res := response.New(201, "Created", "")
+					res := response.New(201, "Created")
 					c.Write([]byte(res.String()))
 				}
 			default:
-				res := response.New(404, "Not Found", "")
+				res := response.New(404, "Not Found")
 				c.Write([]byte(res.String()))
 			}
 		}(conn)
