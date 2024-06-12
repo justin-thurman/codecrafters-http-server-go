@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -51,6 +53,11 @@ func main() {
 							val = strings.TrimSpace(val)
 							if val == "gzip" {
 								res.SetHeader("Content-Encoding", "gzip")
+								var buff bytes.Buffer
+								writer := gzip.NewWriter(&buff)
+								writer.Write([]byte(echoBody))
+								writer.Close()
+								echoBody = buff.String()
 								break
 							}
 						}
