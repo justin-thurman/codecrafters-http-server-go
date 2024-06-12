@@ -46,11 +46,14 @@ func main() {
 				echoBody, _ := strings.CutPrefix(req.URL.Path, "/echo/")
 				encoding, ok := req.Header["Accept-Encoding"]
 				if ok {
-					if len(encoding) > 1 { // Only support one encoding for now
-						log.Fatalf("Expected single encoding, got %d", len(encoding))
-					}
-					if encoding[0] == "gzip" {
-						res.SetHeader("Content-Encoding", "gzip")
+					for _, encodings := range encoding {
+						for _, val := range strings.Split(encodings, ",") {
+							val = strings.TrimSpace(val)
+							if val == "gzip" {
+								res.SetHeader("Content-Encoding", "gzip")
+								break
+							}
+						}
 					}
 				}
 				res.SetBody(echoBody)
