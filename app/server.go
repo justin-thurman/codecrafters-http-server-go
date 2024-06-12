@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/codecrafters-io/http-server-starter-go/app/response"
@@ -52,7 +51,6 @@ func main() {
 				res := response.New(200, "OK")
 				res.SetBody(userAgent, req)
 				res.SetHeader("Content-Type", "text/plain")
-				res.SetHeader("Content-Length", strconv.Itoa(len(userAgent)))
 				c.Write([]byte(res.String()))
 			case strings.HasPrefix(path, "/files/"):
 				var dir string
@@ -78,7 +76,6 @@ func main() {
 					res := response.New(200, "OK")
 					res.SetBody(dataStr, req)
 					res.SetHeader("Content-Type", "application/octet-stream")
-					res.SetHeader("Content-Length", strconv.Itoa(len(dataStr)))
 					c.Write([]byte(res.String()))
 				case "POST":
 					b := make([]byte, req.ContentLength)
